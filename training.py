@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 LEARNING_RATE = 1
 ITERATIONS = 50
@@ -52,6 +53,10 @@ def write_to_file(t0, t1) -> None:
 def calculate_thetas(data: np.ndarray) -> None:
     km = list(data[1:, 0])
     price = list(data[1:, 1])
+    print(km)
+    print(price)
+
+    exit()
     t0, t1 = train_model(0.0, 0.0, km, price)
     write_to_file(t0, t1)
 
