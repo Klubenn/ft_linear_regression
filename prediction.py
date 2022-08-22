@@ -27,16 +27,21 @@ def get_thetas() -> Tuple[float, float]:
                 print('Run the script training.py yourself to train the model.')
                 exit(0)
             print('Unknown option, try again.')
-
-    with open(p) as f:
-        data = loads(f.read())
-        theta0 = data.get('theta0', None)
-        theta1 = data.get('theta1', None)
-        if not any([theta0, theta1]):
-            print(f"Some of data is absent: theta0 = {theta0}, theta1 = {theta1}"
-                  "rerun the training script")
-            exit(1)
-        return theta0, theta1
+    try:
+        with open(p) as f:
+            data = f.read()
+            print(data)
+            data = loads(data)
+            theta0 = data.get('theta0', None)
+            theta1 = data.get('theta1', None)
+            if not any([theta0, theta1]):
+                print(f"Some of data is absent: theta0 = {theta0}, theta1 = {theta1}"
+                      "rerun the training script")
+                exit(1)
+            return theta0, theta1
+    except Exception as e:
+        print(f"An error occured: {e}")
+        exit(1)
 
 
 def predict_price(mileage: int) -> None:
