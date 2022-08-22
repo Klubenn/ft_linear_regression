@@ -46,7 +46,6 @@ def train_model(t0: float, t1: float, km: np.ndarray, price: np.ndarray) -> Tupl
         t1 = tmp_t1
         tmp_sq_er = calculate_square_error(t0, t1, km, price)
         if abs(tmp_sq_er - sq_er) < ERROR:
-            print(f't0={t0}, t1={t1}, iterations={i}, sq_er={sq_er}')
             break
         sq_er = tmp_sq_er
     return t0, t1
@@ -64,33 +63,27 @@ def normalize_data(data: np.ndarray):
     return (data - min(data)) / (max(data) - min(data))
 
 
-def denormalize_theta(normalized_theta, initial_data):
-    return normalized_theta / (initial_data.max() - initial_data.min()) + initial_data.min()
+def denormalize_thetas_negative(x, y):
+    t0 = (max(y) * max(x) - min(y) * min(x)) / (max(x) - min(x))
+    t1 = (min(y) - t0) / max(x)
+    return t0, t1
 
-'''
-x0, x1 = self.training_set[0][0], self.training_set[1][0]
-x0n, x1n = self.normalized_training_set[0][0], self.normalized_training_set[1][0]
-y0n, y1n = self.hypothesis(x0n), self.hypothesis(x1n)
-p_diff = self.max_price - self.min_price
-theta0 = (x1 / (x1 - x0)) * (y0n * p_diff + self.min_price - (x0 / x1 * (y1n * p_diff + self.min_price)))
-y0 = self.training_set[0][1]
-theta1 = (y0 - theta0) / x0
-print(theta0, theta1) //RESULT: 8481.172796984529 -0.020129886654102203
 
-{"theta0": 8008.432727270589, "theta1": -0.01940238620827043}
-'''
+def denormalize_thetas_positive(x, y):
+    t0 = (max(y) * min(x) - min(y) * max(x)) / (min(x) - max(x))
+    t1 = (min(y) - t0) / min(x)
+    return t0, t1
+
 
 def calculate_thetas(data: np.ndarray) -> None:
     km = data[1:, 0]
     price = data[1:, 1]
     km_n = normalize_data(km)
     t0, t1 = train_model(0.0, 0.0, km_n, price)
-    # t1 = t1 / max(data[1:, 0])
-    t1 = denormalize_theta(t1, km)
-    # price_n = estimated_price(t0, t1, km_n)
-    # km = denormalize_data(km_n, data[1:, 0])
-    # price = denormalize_data(price_n, data[1:, 0])
-
+    y_min = estimated_price(t0, t1, 1)
+    y_max = estimated_price(t0, t1, 0)
+    t0, t1 = denormalize_thetas_negative(km, [y_min, y_max]) if t1 < 0 \
+        else denormalize_thetas_positive(km, [y_min, y_max])
     write_to_file(t0, t1)
 
 
