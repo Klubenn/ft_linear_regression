@@ -30,7 +30,6 @@ def get_thetas() -> Tuple[float, float]:
     try:
         with open(p) as f:
             data = f.read()
-            print(data)
             data = loads(data)
             theta0 = data.get('theta0', None)
             theta1 = data.get('theta1', None)

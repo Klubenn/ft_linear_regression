@@ -1,0 +1,13 @@
+### ft_linear_regression
+
+The aim of the project is to create a model, that will be trained with the help of dataset to predict the price of the car according to its mileage.
+
+We'll perform the following steps:
+1. Read the data from csv file and normalize the array with mileage. Normalization of data is needed for the program not to fall into infinity when it is performing calculations. So the smallest mileage becomes 0 and the highest - 1.
+2. Calculate indexes of the linear equasion - theta0(t0) and theta1(t1): `price = t1 * km + t0`. This action is performed in loop and each time a standard deviation is calculated. When the difference between consecutive calculations of standard deviation are less than some value (ERROR) the calculations stop.
+3. Calculate minimum and maximum hypothetical price with this indexes for `km = 0` and `km = 1`. With this values calculate new thetas, creating the line from two points with maximum and minimum hypothetical price and maximum and minimum real mileage (not normalized).
+4. Calculations for previous section depend on whether t1 is positive or negative - this influences the coordinates of the points - `x_min, y_max; x_max, y_min` - for negative t1 and `x_min, y_mim; x_max, y_max` - for positive t1.
+
+`training.py` - trains the model
+
+`prediction.py` - predicts the price for the given mileage
