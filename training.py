@@ -2,96 +2,134 @@
 
 from json import dumps
 from pathlib import Path
-from typing import Tuple
+from typing import Union
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-# This value can be changed to make calculations faster, but should not exceed 1.7
-LEARNING_RATE = 0.1
 
-# This value can be changed to make calculations more precise
-ERROR = 0.0000001
+class MyModel:
+    # This value can be changed to make calculations faster, but should not exceed 1.7
+    LEARNING_RATE = 0.1
 
+    # This value can be changed to make calculations more precise
+    ERROR = 0.0000001
 
-def estimated_price(t0, t1, km):
-    return t1 * km + t0
+    def __init__(self, data):
+        self.km = data[1:, 0]
+        self.price = data[1:, 1]
+        self.km_norm = self.normalize_data(self.km)
+        self.t0 = 0.0
+        self.t1 = 0.0
+        self.sq_err = 0.0
 
+    @staticmethod
+    def normalize_data(array: np.array):
+        """
+        Normalizes data by converting the minimum value to 0 and maximum value
+        to 1 shifting the values in between correspondingly.
+        """
+        return (array - min(array)) / (max(array) - min(array))
 
-def calculate_square_error(t0, t1, km, price) -> float:
-    sum_ = sum([(estimated_price(t0, t1, x) - y) ** 2 for x, y in zip(km, price)])
-    return sum_ / (2 * len(km))
+    def save_thetas(self):
+        """
+        Saves thetas to the file in json format
+        """
+        data = {'theta0': self.t0, 'theta1': self.t1}
+        p = Path(__file__).parent.absolute() / 'thetas.json'
+        with open(p, 'w') as f:
+            f.write(dumps(data))
+        print('SUCCESS')
 
+    def denormalize_thetas(self):
+        """
+        Converts thetas calculated for the normalized dataset to the initial
+        one depending on the positive or negative value of theta1
+        """
+        y_min = self.estimated_price(1)
+        y_max = self.estimated_price(0)
+        if self.t1 < 0:
+            self.t0 = (y_max * max(self.km) - y_min * min(self.km)) / \
+                      (max(self.km) - min(self.km))
+            self.t1 = (y_min - self.t0) / max(self.km)
+        else:
+            self.t0 = (y_max * min(self.km) - y_min * max(self.km)) / \
+                      (min(self.km) - max(self.km))
+            self.t1 = (y_min - self.t0) / min(self.km)
 
-def get_tmp_t0(t0, t1, km, price):
-    size = len(km)
-    sum_ = sum([estimated_price(t0, t1, km_i) - price_i for km_i, price_i in zip(km, price)])
-    return (LEARNING_RATE / size) * sum_
+    def estimated_price(self, x: Union[int, float]):
+        """
+        Calculates the price for the given value on the x-axis depending on
+        the current value of thetas
+        """
+        return self.t1 * x + self.t0
 
+    def calculate_square_error(self) -> float:
+        """
+        Calculates square error depending on the current value of thetas
+        """
+        summ = sum([(self.estimated_price(km_i) - price_i) ** 2
+                    for km_i, price_i in zip(self.km_norm, self.price)])
+        return summ / (2 * len(self.km_norm))
 
-def get_tmp_t1(t0, t1, km, price):
-    size = len(km)
-    sum_ = sum([(estimated_price(t0, t1, km_i) - price_i) * km_i for km_i, price_i in zip(km, price)])
-    return (LEARNING_RATE / size) * sum_
+    def _calculate_t0(self):
+        """
+        Calculates t0 depending on the current values of t0 and learning rate
+        """
+        size = len(self.km)
+        summ = sum([self.estimated_price(km_i) - price_i
+                    for km_i, price_i in zip(self.km_norm, self.price)])
+        return (self.LEARNING_RATE / size) * summ
 
+    def _calculate_t1(self):
+        """
+        Calculates t1 depending on the current values of t0 and learning rate
+        """
+        size = len(self.km)
+        summ = sum([(self.estimated_price(km_i) - price_i) * km_i
+                    for km_i, price_i in zip(self.km_norm, self.price)])
+        return (self.LEARNING_RATE / size) * summ
 
-def train_model(t0: float, t1: float, km: np.ndarray, price: np.ndarray) -> Tuple[float, float]:
-    sq_er = calculate_square_error(t0, t1, km, price)
-    i = 0
-    while True:
-        i += 1
-        tmp_t0 = t0 - get_tmp_t0(t0, t1, km, price)
-        tmp_t1 = t1 - get_tmp_t1(t0, t1, km, price)
-        t0 = tmp_t0
-        t1 = tmp_t1
-        tmp_sq_er = calculate_square_error(t0, t1, km, price)
-        if abs(tmp_sq_er - sq_er) < ERROR:
-            break
-        sq_er = tmp_sq_er
-    return t0, t1
-
-
-def write_to_file(t0, t1) -> None:
-    data = {'theta0': t0, 'theta1': t1}
-    p = Path(__file__).parent.absolute() / 'thetas.json'
-    with open(p, 'w') as f:
-        f.write(dumps(data))
-    print('SUCCESS')
-
-
-def normalize_data(data: np.ndarray):
-    return (data - min(data)) / (max(data) - min(data))
-
-
-def denormalize_thetas_negative(x, y):
-    t0 = (max(y) * max(x) - min(y) * min(x)) / (max(x) - min(x))
-    t1 = (min(y) - t0) / max(x)
-    return t0, t1
-
-
-def denormalize_thetas_positive(x, y):
-    t0 = (max(y) * min(x) - min(y) * max(x)) / (min(x) - max(x))
-    t1 = (min(y) - t0) / min(x)
-    return t0, t1
+    def train_model(self) -> None:
+        """
+        Calculates thetas over and over again till the difference between the
+        two consecutive calculations' square error does not exceed the
+        predefined value
+        """
+        while True:
+            tmp_t0 = self.t0 - self._calculate_t0()
+            tmp_t1 = self.t1 - self._calculate_t1()
+            self.t0 = tmp_t0
+            self.t1 = tmp_t1
+            tmp_sq_er = self.calculate_square_error()
+            if abs(tmp_sq_er - self.sq_err) < self.ERROR:
+                break
+            self.sq_err = tmp_sq_er
 
 
 def calculate_thetas(data: np.ndarray) -> None:
-    km = data[1:, 0]
-    price = data[1:, 1]
-    km_n = normalize_data(km)
-    t0, t1 = train_model(0.0, 0.0, km_n, price)
-    y_min = estimated_price(t0, t1, 1)
-    y_max = estimated_price(t0, t1, 0)
-    t0, t1 = denormalize_thetas_negative(km, [y_min, y_max]) if t1 < 0 \
-        else denormalize_thetas_positive(km, [y_min, y_max])
-    write_to_file(t0, t1)
+    """
+    Creates an instance of the model, trains it and saves the result.
+    """
+    model = MyModel(data)
+    model.train_model()
+    model.denormalize_thetas()
+    model.save_thetas()
 
 
-if __name__ == '__main__':
+def main() -> None:
+    """
+    Opens the dataset and initiates calculations
+    """
     p = Path(__file__).parent.absolute() / 'data.csv'
     if not p.exists():
         print(f'File {p} does not exist.')
         exit(1)
     calculate_thetas(np.genfromtxt(p, delimiter=','))
-    exit(0)
 
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        print(e)

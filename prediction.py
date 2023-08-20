@@ -10,12 +10,14 @@ def get_thetas() -> Tuple[float, float]:
 
     if not p.exists():
         while True:
-            run_script = input("The model has not been trained yet. Would you "
-                               "like to run the training script (y/n)?: ").lower()
+            run_script = input("The model has not been trained yet. Without "
+                               "the training all calculations will be made "
+                               "with thetas set to 0. Would you like to run "
+                               "the training script (y/n)?: ").lower()
             if run_script in ['y', 'yes']:
                 p_tr = Path(__file__).parent.absolute() / 'training.py'
                 if not p_tr.exists():
-                    print('Script training.py is absent!')
+                    print('Error: Script training.py is absent!')
                     exit(1)
                 with Popen(p_tr, stdout=PIPE) as proc:
                     out = str(proc.stdout.read())
@@ -24,8 +26,7 @@ def get_thetas() -> Tuple[float, float]:
                         exit(0)
                     break
             elif run_script in ['n', 'no']:
-                print('Run the script training.py yourself to train the model.')
-                exit(0)
+                return 0, 0
             print('Unknown option, try again.')
     try:
         with open(p) as f:
@@ -34,8 +35,8 @@ def get_thetas() -> Tuple[float, float]:
             theta0 = data.get('theta0', None)
             theta1 = data.get('theta1', None)
             if not any([theta0, theta1]):
-                print(f"Some of data is absent: theta0 = {theta0}, theta1 = {theta1}"
-                      "rerun the training script")
+                print(f"Some of the data is absent: theta0 = {theta0}, "
+                      f"theta1 = {theta1} - rerun the training script")
                 exit(1)
             return theta0, theta1
     except Exception as e:
@@ -44,14 +45,13 @@ def get_thetas() -> Tuple[float, float]:
 
 
 def predict_price(mileage: int) -> None:
-    theta0 = theta1 = 0
     theta0, theta1 = get_thetas()
     price = theta0 + (theta1 * mileage)
     print(f"Estimated price for mileage {mileage} is {price}.")
     exit(0)
 
 
-if __name__ == '__main__':
+def main():
     while True:
         mileage = input("Enter mileage for the car: ")
         try:
@@ -62,3 +62,10 @@ if __name__ == '__main__':
         except TypeError:
             print("Theta values must be numbers")
             exit(1)
+        except Exception as e:
+            print(f'Error: {e}')
+            exit(1)
+
+
+if __name__ == '__main__':
+    main()
