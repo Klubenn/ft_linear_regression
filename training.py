@@ -10,12 +10,15 @@ import matplotlib.pyplot as plt
 
 class MyModel:
     # This value can be changed to make calculations faster, but should not exceed 1.7
-    LEARNING_RATE = 0.1
+    LEARNING_RATE = 0.9
 
-    # This value can be changed to make calculations more precise
-    ERROR = 0.0000001
+    # The smaller the value is, the more precise are calculations
+    ERROR = 0.000001
 
     def __init__(self, data):
+        """
+        Data initialization
+        """
         self.km = data[1:, 0]
         self.price = data[1:, 1]
         self.km_norm = self.normalize_data(self.km)
@@ -46,16 +49,17 @@ class MyModel:
         Converts thetas calculated for the normalized dataset to the initial
         one depending on the positive or negative value of theta1
         """
-        y_min = self.estimated_price(1)
-        y_max = self.estimated_price(0)
+        y_limits = [self.estimated_price(0), self.estimated_price(1)]
         if self.t1 < 0:
-            self.t0 = (y_max * max(self.km) - y_min * min(self.km)) / \
+            self.t0 = (max(y_limits) * max(self.km) -
+                       min(y_limits) * min(self.km)) / \
                       (max(self.km) - min(self.km))
-            self.t1 = (y_min - self.t0) / max(self.km)
+            self.t1 = (min(y_limits) - self.t0) / max(self.km)
         else:
-            self.t0 = (y_max * min(self.km) - y_min * max(self.km)) / \
+            self.t0 = (max(y_limits) * min(self.km) -
+                       min(y_limits) * max(self.km)) / \
                       (min(self.km) - max(self.km))
-            self.t1 = (y_min - self.t0) / min(self.km)
+            self.t1 = (min(y_limits) - self.t0) / min(self.km)
 
     def estimated_price(self, x: Union[int, float]):
         """

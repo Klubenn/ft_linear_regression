@@ -11,3 +11,5 @@ We'll perform the following steps:
 `training.py` - trains the model
 
 `prediction.py` - predicts the price for the given mileage
+
+`demo.ipynb` - demonstration of model training iterations on the graph

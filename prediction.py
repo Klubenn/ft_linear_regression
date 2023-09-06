@@ -46,7 +46,7 @@ def get_thetas() -> Tuple[float, float]:
 
 def predict_price(mileage: int) -> None:
     theta0, theta1 = get_thetas()
-    price = theta0 + (theta1 * mileage)
+    price = int(theta0 + (theta1 * mileage))
     print(f"Estimated price for mileage {mileage} is {price}.")
     exit(0)
 
